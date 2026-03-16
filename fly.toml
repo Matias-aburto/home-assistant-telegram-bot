@@ -1,0 +1,10 @@
+app = "home-assistant-telegram-bot"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[experimental]
+  auto_stop_machines = false
+  auto_start_machines = true
+
