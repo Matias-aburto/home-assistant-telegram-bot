@@ -62,6 +62,34 @@ Deja la terminal abierta. Para detener el bot: `Ctrl+C`.
      - `TELEGRAM_BOT_TOKEN` = el token de tu bot.
 3. Asegúrate de desactivar el **Group Privacy** de tu bot en [@BotFather](https://t.me/BotFather) para que pueda leer mensajes normales en grupos.
 
+## Despliegue en Fly.io
+
+1. Instala la CLI de Fly.io y autentícate:
+   ```bash
+   flyctl auth login
+   ```
+
+2. Desde la carpeta del proyecto, crea la app (usando el `Dockerfile` incluido):
+   ```bash
+   flyctl launch --no-deploy
+   ```
+   - Cuando pregunte por base de datos o servicios extra, puedes decir que no.
+
+3. Configura el token del bot como secreto:
+   ```bash
+   flyctl secrets set TELEGRAM_BOT_TOKEN=tu_token_aqui
+   ```
+
+4. Despliega:
+   ```bash
+   flyctl deploy
+   ```
+
+Fly usará el `Dockerfile` para construir la imagen y ejecutará:
+```bash
+python bot.py
+```
+
 ## Uso básico
 
 - Escribe `ayuda` para ver las instrucciones dentro del chat.
