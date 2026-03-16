@@ -1,18 +1,24 @@
-# Home Assistant Bot (Telegram)
+# Home Assistant Telegram Bot
 
-Bot de Telegram que actúa como asistente del hogar. Primera función: **listas de tareas (to-do)** por usuario. Cada persona que use el bot tiene su propia lista.
+Bot de Telegram que actúa como asistente del hogar. Gestiona listas compartidas por chat (grupo o privado) usando texto muy sencillo:
+
+- 💵 Lista de cosas por comprar
+- 🔨 Lista de cosas por hacer
+- 🎁 Wishlist (deseos)
+
+En un grupo, todos ven y editan las mismas listas.
 
 ## Requisitos
 
-- Python 3.10+
+- Python 3.10+ (en Render se recomienda 3.11, ver `runtime.txt`)
 - Cuenta de Telegram
 - Token de bot (obtener con [@BotFather](https://t.me/BotFather))
 
-## Instalación
+## Instalación local
 
 1. Clona o descarga el proyecto y entra en la carpeta:
    ```bash
-   cd home-assistant
+   cd home-assistant-telegram-bot
    ```
 
 2. Crea y activa un entorno virtual (recomendado):
@@ -31,11 +37,11 @@ Bot de Telegram que actúa como asistente del hogar. Primera función: **listas 
    - Copia `.env.example` a `.env`
    - En [@BotFather](https://t.me/BotFather) crea un bot con `/newbot` y copia el token
    - Pega el token en `.env`:
-     ```
+     ```env
      TELEGRAM_BOT_TOKEN=123456789:ABCdefGHI...
      ```
 
-## Ejecución
+## Ejecución local
 
 ```bash
 python bot.py
@@ -43,22 +49,34 @@ python bot.py
 
 Deja la terminal abierta. Para detener el bot: `Ctrl+C`.
 
-## Uso (lista de tareas)
+## Despliegue en Render (Worker)
 
-| Comando | Descripción |
-|--------|-------------|
-| `/start` | Bienvenida y ayuda |
-| `/todo <texto>` | Añadir tarea (ej: `/todo Comprar leche`) |
-| `/list` o `/todos` | Ver tu lista de tareas |
-| `/done <número>` | Marcar o desmarcar tarea (ej: `/done 2`) |
-| `/delete <número>` | Borrar tarea (ej: `/delete 1`) |
+1. Sube este repo a GitHub (ya preparado para ello).
+2. En Render:
+   - Crea un **Background Worker** desde este repositorio.
+   - Start command:
+     ```bash
+     python bot.py
+     ```
+   - Variables de entorno:
+     - `TELEGRAM_BOT_TOKEN` = el token de tu bot.
+3. Asegúrate de desactivar el **Group Privacy** de tu bot en [@BotFather](https://t.me/BotFather) para que pueda leer mensajes normales en grupos.
 
-Los números en `/done` y `/delete` son los que salen en la lista al usar `/list`.
+## Uso básico
+
+- Escribe `ayuda` para ver las instrucciones dentro del chat.
+- Escribe `lista` para elegir qué lista ver (hacer, comprar, wishlist).
+- Para añadir cosas a una lista, escribe el texto con el emoji:
+  - `leche 💵` → lista de compras
+  - `arreglar puerta 🔨` → lista de cosas por hacer
+  - `libro de cocina 🎁` → wishlist
+
+Puedes escribir varios ítems a la vez separados por comas o en líneas distintas.
 
 ## Datos
 
-- Las tareas se guardan en `todos.db` (SQLite) en la carpeta del proyecto.
-- Cada usuario de Telegram tiene su propia lista (identificada por su `user_id`).
+- Las listas se guardan en `todos.db` (SQLite) en la carpeta del proyecto.
+- Cada chat (grupo o privado) tiene sus propias listas compartidas.
 
 ## Próximos pasos
 
