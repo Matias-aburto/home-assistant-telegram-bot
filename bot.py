@@ -31,10 +31,14 @@ from todo_storage import (
     LIST_TYPE_WISHLIST,
 )
 
-load_dotenv()
+load_dotenv()  # En local lee .env; en Fly.io / Render se usa variable de entorno
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 if not TOKEN:
-    raise SystemExit("Falta TELEGRAM_BOT_TOKEN en .env. Copia .env.example a .env y configura el token.")
+    raise SystemExit(
+        "Falta TELEGRAM_BOT_TOKEN. "
+        "Configura la variable de entorno (p.ej. flyctl secrets set TELEGRAM_BOT_TOKEN=...) "
+        "o crea un archivo .env basado en .env.example."
+    )
 
 
 EMOJI_COMPRAR = "💵"
