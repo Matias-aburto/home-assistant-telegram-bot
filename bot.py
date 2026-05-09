@@ -110,11 +110,11 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat = update.effective_chat
     msg = (
         f"Hola, {user.first_name or 'ahí'} 👋\n\n"
-        "Soy tu asistente de listas compartidas (comprar, hacer, wishlist).\n\n"
-        "• **lista** — ver listas (te pregunto cuál)\n"
+        "Soy tu asistente de listas compartidas.\n\n"
+        "• **lista** — ver listas\n"
         "• **ayuda** — cómo funciona\n\n"
-        "Para *añadir* algo, escribe el texto con el emoji:\n"
-        "💵 comprar · 🔨 hacer · 🎁 wishlist\n\n"
+        "Lo que escribas va a *compras* (también por comas o líneas).\n"
+        "🔨 por hacer · 🎁 wishlist\n\n"
     )
     if chat.type in ("group", "supergroup"):
         msg += "👥 En este grupo las listas son *compartidas* entre todos."
@@ -136,36 +136,34 @@ def _get_help_text() -> str:
         "• **lista** — eliges qué lista ver (hacer, comprar, wishlist)\n"
         "• **ayuda** — muestra este mensaje\n\n"
         "*Tres listas:*\n"
-        "💵 *Por comprar* — cosas a comprar\n"
-        "🔨 *Por hacer* — tareas\n"
-        "🎁 *Wishlist* — deseos\n\n"
-        "*Añadir ítems:*\n"
-        "Escribe el texto *con el emoji* de la lista:\n"
-        "• leche 💵 → comprar\n"
-        "• arreglar ventana 🔨 → hacer\n"
+        "💵 *Por comprar* — por defecto, todo lo que escribes va aquí\n"
+        "🔨 *Por hacer* — solo si incluyes **🔨** en el mensaje\n"
+        "🎁 *Wishlist* — solo si incluyes **🎁** en el mensaje\n\n"
+        "*Añadir a compras (por defecto):*\n"
+        "Escribe lo que quieras: _pan, leche, atún_ o en líneas con _-pan_.\n"
+        "El emoji 💵 sigue valiendo pero ya no es obligatorio.\n\n"
+        "*Añadir a otras listas:*\n"
+        "• arreglar ventana 🔨 → por hacer\n"
         "• libro de cocina 🎁 → wishlist\n\n"
-        "*Varios ítems en un mensaje:*\n"
-        "Por comas: _pan, atun, leche 💵_\n"
-        "O uno por línea: _-pan_, _-atun_, _-leche 💵_\n\n"
         "*Ver una lista:*\n"
         "• Escribe **lista** y elige con el botón.\n"
-        "• O escribe solo **💵**, **🔨** o **🎁** para ver esa lista.\n"
-        "• Toca cada ítem en la lista para marcarlo como hecho.\n\n"
+        "• O solo **💵**, **🔨** o **🎁** para ver esa lista.\n"
+        "• Toca cada ítem para marcarlo como hecho.\n\n"
         "👥 En grupos, las listas son compartidas entre todos."
     )
 
 
 async def cmd_todo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Añade una tarea: /todo Comprar leche."""
+    """Añade a la lista de compras: /todo pan."""
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
     text = " ".join(context.args).strip() if context.args else ""
     if not text:
-        await update.message.reply_text("Escribe la tarea después de /todo, o simplemente escribe la tarea en el chat.")
+        await update.message.reply_text("Escribe la tarea después de /todo, o simplemente escribe en el chat (va a compras).")
         return
-    item = add_todo(chat_id, user_id, text, list_type=LIST_TYPE_HACER)
-    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🔨 Ver por hacer", callback_data="todo_showlist:hacer")]])
-    await update.message.reply_text(f"✅ Añadido: {item.text}", reply_markup=keyboard)
+    item = add_todo(chat_id, user_id, text, list_type=LIST_TYPE_COMPRAR)
+    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("💵 Ver por comprar", callback_data="todo_showlist:comprar")]])
+    await update.message.reply_text(f"✅ Añadido a compras: {item.text}", reply_markup=keyboard)
 
 
 async def cmd_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -229,7 +227,7 @@ async def on_show_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 
 async def on_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Texto libre: ayuda/lista por palabra; emoji → lista o añadir; sin emoji → preguntar lista."""
+    """Texto libre: ayuda/lista; 🔨/🎁 añaden a esas listas; el resto va a compras (comas/líneas)."""
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
     text = (update.message.text or "").strip()
@@ -243,7 +241,7 @@ async def on_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     if rest == EMOJI_COMPRAR:
         built = _build_list_message_and_keyboard(chat_id, list_type=LIST_TYPE_COMPRAR)
         if not built:
-            await update.message.reply_text("No hay nada en la lista de compras. Escribe algo con 💵 para añadir.")
+            await update.message.reply_text("No hay nada en la lista de compras. Escribe lo que quieras comprar.")
             return
         msg, reply_markup = built
         await update.message.reply_text(msg, parse_mode="Markdown", reply_markup=reply_markup)
@@ -274,20 +272,6 @@ async def on_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         ])
         await update.message.reply_text("¿Qué lista quieres ver?", reply_markup=keyboard)
         return
-    if EMOJI_COMPRAR in text:
-        raw_items = _parse_multi_items(text)
-        items_clean = [t for t in (_strip_list_emojis(i) for i in raw_items) if t]
-        if not items_clean:
-            await update.message.reply_text("Escribe qué quieres comprar junto al 💵. Ejemplo: leche 💵")
-            return
-        for t in items_clean:
-            add_todo(chat_id, user_id, t, list_type=LIST_TYPE_COMPRAR)
-        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("💵 Ver por comprar", callback_data="todo_showlist:comprar")]])
-        msg = f"✅ Añadidos a compras ({len(items_clean)}): " + ", ".join(items_clean[:5])
-        if len(items_clean) > 5:
-            msg += f" y {len(items_clean) - 5} más"
-        await update.message.reply_text(msg, reply_markup=keyboard)
-        return
     if EMOJI_HACER in text:
         raw_items = _parse_multi_items(text)
         items_clean = [t for t in (_strip_list_emojis(i) for i in raw_items) if t]
@@ -316,7 +300,18 @@ async def on_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             msg += f" y {len(items_clean) - 5} más"
         await update.message.reply_text(msg, reply_markup=keyboard)
         return
-    # Texto sin emoji (ej: "hola como estás") → no hacemos nada, para no molestar
+    # Por defecto: compras (sin necesidad de 💵). Varios ítems: comas o líneas.
+    raw_items = _parse_multi_items(text)
+    items_clean = [t for t in (_strip_list_emojis(i) for i in raw_items) if t]
+    if not items_clean:
+        return
+    for t in items_clean:
+        add_todo(chat_id, user_id, t, list_type=LIST_TYPE_COMPRAR)
+    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("💵 Ver por comprar", callback_data="todo_showlist:comprar")]])
+    msg = f"✅ Añadidos a compras ({len(items_clean)}): " + ", ".join(items_clean[:5])
+    if len(items_clean) > 5:
+        msg += f" y {len(items_clean) - 5} más"
+    await update.message.reply_text(msg, reply_markup=keyboard)
 
 
 async def on_add_to_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

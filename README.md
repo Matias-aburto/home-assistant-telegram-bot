@@ -94,12 +94,11 @@ python bot.py
 
 - Escribe `ayuda` para ver las instrucciones dentro del chat.
 - Escribe `lista` para elegir qué lista ver (hacer, comprar, wishlist).
-- Para añadir cosas a una lista, escribe el texto con el emoji:
-  - `leche 💵` → lista de compras
-  - `arreglar puerta 🔨` → lista de cosas por hacer
+- Por defecto, lo que escribas va a la **lista de compras** (también varios ítems por comas o líneas).
+- Para otras listas usa el emoji:
+  - `arreglar puerta 🔨` → por hacer
   - `libro de cocina 🎁` → wishlist
-
-Puedes escribir varios ítems a la vez separados por comas o en líneas distintas.
+- El emoji 💵 sigue siendo válido para compras pero ya no es obligatorio.
 
 ## Datos
 
